@@ -125,7 +125,8 @@ class GameCommands(commands.Cog):
             )
             return
         try:
-            game = SokobanGame(interaction.user, self.bot.leaderboard, emoji)
+            user = interaction.user if isinstance(interaction.user, discord.User) else await interaction.client.fetch_user(interaction.user.id)
+            game = SokobanGame(user, self.bot.leaderboard, emoji)
             self.active_games[user_id] = game
             embed = await game.create_game_embed()
             view = GameView(game, user_id)

@@ -14,6 +14,11 @@ class GameView(discord.ui.View):
         self.game_instance = game_instance
         self.user_id = user_id
         self.input_mode = "buttons"  # Control del modo de input
+        self.message = None  # Referencia al mensaje del juego
+
+    def set_message(self, message: discord.Message):
+        """Establecer la referencia del mensaje para actualizaciones"""
+        self.message = message
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.user_id:
@@ -114,6 +119,32 @@ class GameView(discord.ui.View):
                 ephemeral=True
             )
 
+    async def update_from_text_command(self, result):
+        """Actualizar el mensaje desde comandos de texto"""
+        if not self.message:
+            return
+            
+        try:
+            if result['action'] == 'move':
+                embed = await self.game_instance.create_game_embed()
+                await self.message.edit(embed=embed, view=self)
+                
+            elif result['action'] == 'win':
+                embed = await self.game_instance.create_win_embed()
+                new_view = WinView(self.game_instance, self.user_id)
+                await self.message.edit(embed=embed, view=new_view)
+                
+            elif result['action'] == 'stop':
+                embed = discord.Embed(
+                    title="🎮 Juego Terminado",
+                    description="¡Juego terminado desde comando de texto!",
+                    color=0x00ff00
+                )
+                await self.message.edit(embed=embed, view=None)
+                
+        except Exception as e:
+            print(f"Error actualizando desde comando de texto: {e}")
+
 class WinView(discord.ui.View):
     def __init__(self, game_instance, user_id):
         super().__init__(timeout=60)
@@ -134,6 +165,8 @@ class WinView(discord.ui.View):
         await self.game_instance.next_level()
         embed = await self.game_instance.create_game_embed()
         view = GameView(self.game_instance, self.user_id)
+        # Establecer la referencia del mensaje en el nuevo view
+        view.set_message(interaction.message)
         await interaction.response.edit_message(embed=embed, view=view)
 
     @discord.ui.button(label='🛑 Parar', style=discord.ButtonStyle.red)
@@ -164,9 +197,17 @@ class GameCommands(commands.Cog):
             user = interaction.user if isinstance(interaction.user, discord.User) else await interaction.client.fetch_user(interaction.user.id)
             game = SokobanGame(user, self.bot.leaderboard, emoji)
             view = GameView(game, user_id)
-            self.active_games[user_id] = {'game': game, 'view': view}  # Guardamos tanto el juego como el view
+            
             embed = await game.create_game_embed()
             await interaction.response.send_message(embed=embed, view=view)
+            
+            # CRÍTICO: Obtener la referencia del mensaje y establecerla en el view
+            message = await interaction.original_response()
+            view.set_message(message)
+            
+            # Guardamos tanto el juego como el view
+            self.active_games[user_id] = {'game': game, 'view': view, 'message': message}
+            
         except Exception as e:
             await interaction.response.send_message(f"❌ Error iniciando el juego: {e}", ephemeral=True)
 
@@ -248,6 +289,7 @@ class GameCommands(commands.Cog):
                     pass
                 return
                 
+            # Procesar el movimiento
             result = await game.handle_input(direction)
             
             # Eliminar el comando del usuario
@@ -256,11 +298,8 @@ class GameCommands(commands.Cog):
             except:
                 pass
                 
-            # Si necesita actualizar el embed (movimiento exitoso)
-            if result['action'] == 'move':
-                # Aquí necesitarías una forma de actualizar el mensaje original
-                # Esto requiere que guardes la referencia del mensaje
-                pass
+            # SOLUCIÓN: Actualizar la interfaz inmediatamente
+            await view.update_from_text_command(result)
                 
         except Exception as e:
             await ctx.send(f"❌ Error: {e}", delete_after=5)

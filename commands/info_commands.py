@@ -1,3 +1,4 @@
+import time
 import discord
 from discord.ext import commands
 from discord import app_commands
@@ -60,8 +61,78 @@ class InfoCommands(commands.Cog):
             value="• Más puntos por completar niveles rápido\n• Menos movimientos = más puntos\n• Compite en el leaderboard global\n• Estadísticas detalladas de progreso",
             inline=False
         )
-        embed.set_footer(text="¡Creado con ❤️ por @f4b1o!")
+        embed.set_footer(text="¡Creado con ❤️ por @fabb!", icon_url="https://avatars.githubusercontent.com/u/69556083?v=4")
         await interaction.response.send_message(embed=embed)
+        
+    @app_commands.command(name="ping", description="Muestra la latencia del bot y estado de conexión")
+    async def ping(self, interaction: discord.Interaction):
+        # Medir latencia de la API
+        start_time = time.time()
+        await interaction.response.defer()
+        api_latency = (time.time() - start_time) * 1000
+        
+        # Latencia del websocket
+        websocket_latency = self.bot.latency * 1000
+        
+        # Crear embed kawaii
+        embed = discord.Embed(
+            title="🏓 Pong! ✨",
+            color=0xFF69B4,  # Rosa kawaii
+            timestamp=discord.utils.utcnow()
+        )
+        
+        # Determinar el estado basado en la latencia
+        if websocket_latency < 100:
+            status_emoji = "💚"
+            status_text = "Excelente"
+        elif websocket_latency < 200:
+            status_emoji = "💛" 
+            status_text = "Buena"
+        elif websocket_latency < 500:
+            status_emoji = "🧡"
+            status_text = "Regular" 
+        else:
+            status_emoji = "❤️"
+            status_text = "Lenta"
+        
+        embed.add_field(
+            name="🌐 Latencia WebSocket", 
+            value=f"`{websocket_latency:.0f}ms` {status_emoji}", 
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📡 Latencia API", 
+            value=f"`{api_latency:.0f}ms`", 
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📊 Estado", 
+            value=f"{status_text}", 
+            inline=True
+        )
+        
+        # Agregar al embed información adicional
+        embed.add_field(
+            name="🎮 Servidores", 
+            value=f"`{len(self.bot.guilds)}`", 
+            inline=True
+        )
+
+        embed.add_field(
+            name="👥 Usuarios", 
+            value=f"`{len(self.bot.users)}`", 
+            inline=True
+        )
+
+        # Información adicional kawaii
+        embed.set_footer(
+            text="Sokoromi está funcionando perfectamente! (◕‿◕)", 
+            icon_url=self.bot.user.display_avatar.url
+        )
+        
+        await interaction.followup.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

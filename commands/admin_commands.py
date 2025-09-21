@@ -44,10 +44,7 @@ class AdminCommands(commands.Cog):
             await interaction.response.send_message(embed=embed)
         except Exception as e:
             await interaction.response.send_message(f"❌ Error restaurando el prefijo: {e}", ephemeral=True)
-    @app_commands.command(name="listcmds", description="Listar comandos slash activos")
-    async def listcmds(self, interaction: discord.Interaction):
-        cmds = [cmd.name for cmd in self.bot.tree.get_commands()]
-        await interaction.response.send_message(f"Comandos activos: {cmds}")
+    
 
 
 async def setup(bot):

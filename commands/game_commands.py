@@ -29,10 +29,32 @@ class GameView(discord.ui.View):
             return False
         return True
 
-    # FILA 0: Botón UP centrado
+    # FILA 0: Botón UP centrado con decoraciones kawaii  
+    @discord.ui.button(emoji='✨', style=discord.ButtonStyle.secondary, row=0)
+    async def left_decoration(self, interaction: discord.Interaction, button: discord.ui.Button):
+        kawaii_responses = [
+            "✨ ¡Solo soy una estrellita decorativa! (◕‿◕)",
+            "✨ ¡Brillo brillo! Pero no hago nada más ♪(´▽｀)",
+            "✨ ¡Me gusta hacer bonito el Sokoban! ✨(｡◕‿◕｡)",
+            "✨ ¡Wuiiiiiiiiiii! ♡"
+        ]
+        import random
+        await interaction.response.send_message(random.choice(kawaii_responses), ephemeral=True)
+
     @discord.ui.button(emoji='⬆️', style=discord.ButtonStyle.primary, row=0)
     async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_move(interaction, 'w')
+
+    @discord.ui.button(emoji='✨', style=discord.ButtonStyle.secondary, row=0) 
+    async def right_decoration(self, interaction: discord.Interaction, button: discord.ui.Button):
+        kawaii_responses = [
+            "✨ ¡Soy la otra estrellita decorativa! (｡◕‿◕｡)",
+            "✨ ¡¡Wuiiiiiiiiiii! ♪",
+            "✨ ¡Brillamos juntas para Sokoromi! ✨✨",
+            "✨ ¡Soy la hermana gemela de la otra estrellita! ♡"
+        ]
+        import random
+        await interaction.response.send_message(random.choice(kawaii_responses), ephemeral=True)
 
     # FILA 1: LEFT, DOWN, RIGHT en línea
     @discord.ui.button(emoji='⬅️', style=discord.ButtonStyle.primary, row=1)
@@ -245,67 +267,73 @@ class GameCommands(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Error obteniendo estadísticas: {e}", ephemeral=True)
 
-    # Comandos de texto mejorados
-    @commands.command(name="w", aliases=["arriba"])
-    async def move_up_text(self, ctx):
-        await self.handle_text_input(ctx, 'w')
-
-    @commands.command(name="s", aliases=["abajo"])
-    async def move_down_text(self, ctx):
-        await self.handle_text_input(ctx, 's')
-
-    @commands.command(name="a", aliases=["izquierda"])
-    async def move_left_text(self, ctx):
-        await self.handle_text_input(ctx, 'a')
-
-    @commands.command(name="d", aliases=["derecha"])
-    async def move_right_text(self, ctx):
-        await self.handle_text_input(ctx, 'd')
-
-    @commands.command(name="r")
-    async def reset_text(self, ctx):
-        await self.handle_text_input(ctx, 'r')
-
-    @commands.command(name="mr")
-    async def new_map_text(self, ctx):
-        await self.handle_text_input(ctx, 'mr')
-
-    async def handle_text_input(self, ctx, direction):
-        user_id = ctx.author.id
+    async def handle_text_input_from_message(self, message, direction):
+        """Manejar comandos de texto desde el listener on_message"""
+        user_id = message.author.id
+        
         if user_id not in self.active_games:
-            return
-
+            return False  # No hay juego activo
+            
         try:
             game_data = self.active_games[user_id]
             game = game_data['game']
             view = game_data['view']
             
             # Verificar si está en modo texto
-            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
-                await ctx.send("🖱️ Estás en modo botones. Usa las flechas del embed o cambia a modo texto.", delete_after=3)
+            if hasattr(view, 'input_mode') and view.input_mode != "text":
+                # Eliminar mensaje pero no mostrar error (modo silencioso)
                 try:
-                    await ctx.message.delete()
-                except:
-                    pass
-                return
-                
-            # Procesar el movimiento
+                    await message.delete()
+                except discord.NotFound:
+                    pass  # El mensaje ya fue eliminado
+                except discord.Forbidden:
+                    pass  # No tenemos permisos para eliminar
+                except Exception:
+                    pass  # Cualquier otro error
+                return True  # Procesado (aunque no ejecutado)
+            
+            # PRIMERO: Eliminar el comando del usuario INMEDIATAMENTE
+            delete_success = False
+            try:
+                await message.delete()
+                delete_success = True
+            except discord.NotFound:
+                delete_success = True  # Ya fue eliminado
+            except discord.Forbidden:
+                # No tenemos permisos, enviar mensaje temporal
+                await message.channel.send(
+                    "⚠️ No tengo permisos para eliminar mensajes. Los comandos funcionarán pero quedarán visibles.",
+                    delete_after=3
+                )
+            except Exception as e:
+                print(f"Error eliminando mensaje: {e}")
+            
+            # SEGUNDO: Procesar el movimiento
             result = await game.handle_input(direction)
             
-            # Eliminar el comando del usuario
+            # TERCERO: Actualizar la interfaz
+            await view.update_from_text_command(result)
+            
+            return True  # Procesado exitosamente
+                
+        except Exception as e:
+            # Si hay error, intentar eliminar el mensaje de todas formas
             try:
-                await ctx.message.delete()
+                await message.delete()
+            except:
+                pass
+            
+            # Enviar mensaje de error temporal
+            try:
+                await message.channel.send(f"❌ Error procesando comando: {e}", delete_after=5)
             except:
                 pass
                 
-            # SOLUCIÓN: Actualizar la interfaz inmediatamente
-            await view.update_from_text_command(result)
-                
-        except Exception as e:
-            await ctx.send(f"❌ Error: {e}", delete_after=5)
+            return True  # Procesado (aunque con error)
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        # Filtros básicos
         if message.author.bot:
             return
         if not isinstance(message.channel, discord.TextChannel):
@@ -315,17 +343,14 @@ class GameCommands(commands.Cog):
         if user_id not in self.active_games:
             return
             
+        # Verificar si es un comando de juego
         content = message.content.lower().strip()
         if content in ['w', 'a', 's', 'd', 'r', 'mr']:
-            # Verificar modo de input antes de procesar
-            game_data = self.active_games[user_id]
-            view = game_data['view']
-            
-            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
-                return  # No procesar comandos de texto en modo botones
-                
-            ctx = await self.bot.get_context(message)
-            await self.handle_text_input(ctx, content)
+            # Procesar el comando y eliminarlo
+            processed = await self.handle_text_input_from_message(message, content)
+            # Si se procesó, no permitir que otros handlers lo vean
+            if processed:
+                return
 
 async def setup(bot):
     await bot.add_cog(GameCommands(bot))

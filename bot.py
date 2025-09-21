@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-class SokobotPython(Bot):
+class SokoromiBot(Bot):  # ← CAMBIAR: SokobotPython → SokoromiBot
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
@@ -31,7 +31,7 @@ class SokobotPython(Bot):
         super().__init__(
             command_prefix=commands.when_mentioned_or("!"),
             intents=intents,
-            description="Sokobot en Python - El clásico juego de rompecabezas de empujar cajas"
+            description="Sokoromi - Bot de Sokoban Kawaii para Discord"  # ← CAMBIAR: Descripción actualizada
         )
 
         self.db = Database()
@@ -77,18 +77,21 @@ class SokobotPython(Bot):
         
         print("Comandos actuales en árbol después de cargar cogs:", [cmd.name for cmd in self.tree.get_commands()])
 
+        # ← MEJORAR: Logging más detallado para User Apps
         if self.testing_mode and self.test_guilds:
             for guild_id in self.test_guilds:
                 guild = discord.Object(id=guild_id)
                 try:
                     synced = await self.tree.sync(guild=guild)
                     logger.info(f"Sincronizados {len(synced)} comandos slash en servidor de prueba {guild_id}")
+                    logger.info(f"Comandos disponibles: {[cmd.name for cmd in synced]}")
                 except Exception as e:
                     logger.error(f"Error sincronizando comandos en servidor de prueba {guild_id}: {e}")
         else:
             try:
                 synced = await self.tree.sync()
                 logger.info(f"Sincronizados {len(synced)} comandos slash globalmente")
+                logger.info(f"Comandos User App listos: {[cmd.name for cmd in synced if getattr(cmd, 'allowed_installs', None)]}")
             except Exception as e:
                 logger.error(f"Error sincronizando comandos: {e}")
 
@@ -106,50 +109,70 @@ class SokobotPython(Bot):
     async def on_ready(self):
         logger.info(f'{self.user} está conectado y listo!')
         logger.info(f'Conectado a {len(self.guilds)} servidores')
-        activity = discord.Game(name="Sokoban | /play para jugar")
+        
+        # ← CAMBIAR: Actividad actualizada
+        activity = discord.Game(name="Sokoromi | /play para jugar ✨")
         await self.change_presence(activity=activity)
 
         commands = await self.tree.fetch_commands()
         logger.info(f'Comandos slash sincronizados: {[cmd.name for cmd in commands]}')
+        
+        # ← AGREGAR: Log específico para User Apps
+        user_app_commands = [cmd.name for cmd in commands if hasattr(cmd, 'allowed_installs')]
+        if user_app_commands:
+            logger.info(f'Comandos User App disponibles: {user_app_commands}')
 
         self.loop.create_task(self.game_cleanup_timer())
 
     async def on_guild_join(self, guild):
-        logger.info(f"Bot agregado al servidor: {guild.name} (ID: {guild.id})")
+        logger.info(f"Sokoromi agregado al servidor: {guild.name} (ID: {guild.id}) - {guild.member_count} miembros")
 
     async def on_guild_remove(self, guild):
-        logger.info(f"Bot removido del servidor: {guild.name} (ID: {guild.id})")
+        logger.info(f"Sokoromi removido del servidor: {guild.name} (ID: {guild.id})")
         if guild.id in self.prefixes:
             del self.prefixes[guild.id]
-        await self.db.remove_guild_data(guild.id)
+        # ← MEJORAR: Mejor manejo de errores en cleanup
+        try:
+            await self.db.remove_guild_data(guild.id)
+        except Exception as e:
+            logger.error(f"Error limpiando datos del servidor {guild.id}: {e}")
 
     async def game_cleanup_timer(self):
+        """Timer para limpiar juegos inactivos cada minuto"""
         while not self.is_closed():
             try:
-                await self.game_utils.cleanup_inactive_games()
-                await asyncio.sleep(60)
+                # ← MEJORAR: Más logging del cleanup
+                cleaned = await self.game_utils.cleanup_inactive_games()
+                if cleaned > 0:
+                    logger.info(f"Limpieza automática: {cleaned} juegos inactivos removidos")
+                await asyncio.sleep(60)  # Esperar 1 minuto
             except Exception as e:
                 logger.error(f"Error en cleanup timer: {e}")
-                await asyncio.sleep(60)
+                await asyncio.sleep(60)  # Continuar a pesar del error
 
     def debug_log(self, message):
+        """Log de debug cuando está habilitado"""
         if self.debug:
             logger.info(f"[DEBUG] {message}")
 
 async def main():
-    bot = SokobotPython()
+    bot = SokoromiBot()  # ← CAMBIAR: Nombre actualizado
     token = os.getenv('DISCORD_TOKEN')
+    
     if not token:
         logger.error("No se encontró DISCORD_TOKEN en el archivo .env")
         return
+        
     try:
+        logger.info("Iniciando Sokoromi...")  # ← AGREGAR: Log de inicio
         await bot.start(token)
     except KeyboardInterrupt:
-        logger.info("Bot detenido por el usuario")
+        logger.info("Sokoromi detenido por el usuario")
     except Exception as e:
-        logger.error(f"Error ejecutando el bot: {e}")
+        logger.error(f"Error ejecutando Sokoromi: {e}")
     finally:
         if not bot.is_closed():
+            logger.info("Cerrando conexiones...")
             await bot.close()
 
 if __name__ == "__main__":

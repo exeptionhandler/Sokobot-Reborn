@@ -1,4 +1,4 @@
-# Sokoromi - Página Web Kawaii 💕
+# Sokoromi - Página Web 💕
 
 Página web oficial de **Sokoromi**, el bot de Discord más kawaii para jugar Sokoban.
 
@@ -17,3 +17,4 @@ Página web oficial de **Sokoromi**, el bot de Discord más kawaii para jugar So
 - **Bot ID**: Cambia `client_id=` en enlaces de invitación
 
 ¡Hecho con 💖 para Sokoromi!
+

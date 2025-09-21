@@ -2,7 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 import asyncio
-from typing import Optional
+from typing import Optional, Union
 
 from game.sokoban_game import SokobanGame
 from utils.game_utils import GameUtils
@@ -207,11 +207,17 @@ class GameCommands(commands.Cog):
 
     @app_commands.command(name="play", description="Iniciar una nueva partida de Sokoban")
     @app_commands.describe(emoji="Emoji personalizado para tu personaje (opcional)")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def play_slash(self, interaction: discord.Interaction, emoji: Optional[str] = None):
         user_id = interaction.user.id
+        
+        # Mensaje contextual
+        context_type = "DM" if interaction.guild is None else f"servidor {interaction.guild.name}"
+        
         if user_id in self.active_games:
             await interaction.response.send_message(
-                "❌ Ya tienes un juego activo. Usa `/stop` para terminarlo primero.",
+                f"❌ Ya tienes un juego activo. Usa `/stop` para terminarlo primero.",
                 ephemeral=True
             )
             return
@@ -221,6 +227,13 @@ class GameCommands(commands.Cog):
             view = GameView(game, user_id)
             
             embed = await game.create_game_embed()
+            
+            # Agregar footer contextual
+            if interaction.guild is None:
+                embed.set_footer(text="🔥 ¡Jugando en DM! Sokoromi está contigo en cualquier lugar ✨")
+            else:
+                embed.set_footer(text=f"🎮 Jugando en {interaction.guild.name}")
+            
             await interaction.response.send_message(embed=embed, view=view)
             
             # CRÍTICO: Obtener la referencia del mensaje y establecerla en el view
@@ -228,12 +241,19 @@ class GameCommands(commands.Cog):
             view.set_message(message)
             
             # Guardamos tanto el juego como el view
-            self.active_games[user_id] = {'game': game, 'view': view, 'message': message}
+            self.active_games[user_id] = {
+                'game': game, 
+                'view': view, 
+                'message': message,
+                'context': 'dm' if interaction.guild is None else 'guild'
+            }
             
         except Exception as e:
             await interaction.response.send_message(f"❌ Error iniciando el juego: {e}", ephemeral=True)
 
     @app_commands.command(name="stop", description="Terminar tu partida actual de Sokoban")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def stop_slash(self, interaction: discord.Interaction):
         user_id = interaction.user.id
         if user_id not in self.active_games:
@@ -245,9 +265,20 @@ class GameCommands(commands.Cog):
             description=f"¡Gracias por jugar, {interaction.user.mention}!",
             color=0x00ff00
         )
+        
+        # Mensaje especial para DM
+        if interaction.guild is None:
+            embed.add_field(
+                name="✨ Tip", 
+                value="¡Puedes jugar Sokoromi en cualquier servidor donde estés!", 
+                inline=False
+            )
+            
         await interaction.response.send_message(embed=embed)
 
     @app_commands.command(name="stats", description="Ver tus estadísticas de Sokoban")
+    @app_commands.allowed_installs(guilds=True, users=True)
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)
     async def stats_slash(self, interaction: discord.Interaction):
         try:
             stats = await self.bot.leaderboard.get_player_stats(interaction.user.id)
@@ -262,6 +293,11 @@ class GameCommands(commands.Cog):
                 embed.add_field(name="📈 Puntuación Total", value=stats['total_score'], inline=True)
             else:
                 embed.description = "No tienes estadísticas aún. ¡Juega tu primera partida!"
+                
+            # Footer contextual
+            context_msg = "📱 Estadísticas personales" if interaction.guild is None else f"📊 Estadísticas en {interaction.guild.name}"
+            embed.set_footer(text=context_msg)
+            
             embed.set_thumbnail(url=interaction.user.display_avatar.url)
             await interaction.response.send_message(embed=embed)
         except Exception as e:
@@ -336,7 +372,9 @@ class GameCommands(commands.Cog):
         # Filtros básicos
         if message.author.bot:
             return
-        if not isinstance(message.channel, discord.TextChannel):
+        
+        # CAMBIO IMPORTANTE: Permitir tanto TextChannel como DMChannel
+        if not isinstance(message.channel, (discord.TextChannel, discord.DMChannel)):
             return
             
         user_id = message.author.id

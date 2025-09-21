@@ -1,8 +1,10 @@
 import time
+import logging
 import discord
 from discord.ext import commands
 from discord import app_commands
 from typing import Optional
+
 
 class LeaderboardView(discord.ui.View):
     def __init__(self, bot):
@@ -24,14 +26,18 @@ class LeaderboardView(discord.ui.View):
         embed = await self.bot.leaderboard.create_leaderboard_embed(self.current_sort)
         await interaction.response.edit_message(embed=embed, view=self)
 
+
 class InfoCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.logger = logging.getLogger(__name__)  # ← AGREGAR: Logger para ping command
 
-    @app_commands.command(name="info", description="Información sobre Sokobot y cómo jugar")
+    @app_commands.command(name="info", description="Información sobre Sokoromi y cómo jugar")
+    @app_commands.allowed_installs(guilds=True, users=True)  # ← AGREGAR: User App support
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)  # ← AGREGAR: DM support
     async def info_slash(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="🤖 Sokobot Python",
+            title="🤖 Sokoromi - Bot de Sokoban Kawaii",  # ← CAMBIAR: Nombre actualizado
             description="Bot de Discord para jugar Sokoban, el clásico juego de rompecabezas de empujar cajas.",
             color=0x3498db
         )
@@ -43,7 +49,7 @@ class InfoCommands(commands.Cog):
         )
         embed.add_field(
             name="🎮 Características",
-            value="✅ **Niveles Infinitos** - Mapas generados aleatoriamente\n✅ **Controles Duales** - Botones interactivos y comandos de texto\n✅ **Sistema de Puntuación** - Compite en el leaderboard global\n✅ **Estadísticas Detalladas** - Rastrea tu progreso\n✅ **Juegos Simultáneos** - Varios jugadores a la vez",
+            value="✅ **Niveles Infinitos** - Mapas generados aleatoriamente\n✅ **Controles Duales** - Botones interactivos y comandos de texto\n✅ **Sistema de Puntuación** - Compite en el leaderboard global\n✅ **Estadísticas Detalladas** - Rastrea tu progreso\n✅ **User App** - Disponible en cualquier lugar",  # ← ACTUALIZAR: Nueva característica
             inline=False
         )
         embed.add_field(
@@ -56,15 +62,40 @@ class InfoCommands(commands.Cog):
             value="**Botones:** Usa los botones debajo del juego\n**Texto:** Escribe `w`, `a`, `s`, `d` para moverte\n`r` - Reiniciar nivel\n`mr` - Generar nuevo mapa",
             inline=True
         )
+        
+        # ← AGREGAR: Info específica del contexto
+        if interaction.guild is None:
+            embed.add_field(
+                name="📱 Jugando en DM",
+                value="¡Perfecto! Puedes jugar Sokoromi privadamente\nTambién funciona en cualquier servidor donde estés\n¡Instálame como User App para máxima portabilidad!",
+                inline=False
+            )
+            embed.set_footer(
+                text="✨ Sokoromi instalado como User App - ¡Disponible en todas partes!",
+                icon_url=self.bot.user.display_avatar.url
+            )
+        else:
+            embed.add_field(
+                name="🏰 Jugando en servidor",
+                value=f"Estás en: **{interaction.guild.name}**\n¡También puedes jugar en DM conmigo!\nPuedes instalarme como User App para jugar en cualquier lugar",
+                inline=False
+            )
+            embed.set_footer(
+                text=f"🎮 Sokoromi en {interaction.guild.name} • ¡Creado con ❤️ por @fabb!",
+                icon_url=self.bot.user.display_avatar.url
+            )
+        
         embed.add_field(
             name="🏆 Sistema de Puntuación",
             value="• Más puntos por completar niveles rápido\n• Menos movimientos = más puntos\n• Compite en el leaderboard global\n• Estadísticas detalladas de progreso",
             inline=False
         )
-        embed.set_footer(text="¡Creado con ❤️ por @fabb!", icon_url="https://avatars.githubusercontent.com/u/69556083?v=4")
+        
         await interaction.response.send_message(embed=embed)
         
     @app_commands.command(name="ping", description="Muestra la latencia del bot y estado de conexión")
+    @app_commands.allowed_installs(guilds=True, users=True)  # ← AGREGAR: User App support
+    @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)  # ← AGREGAR: DM support
     async def ping(self, interaction: discord.Interaction):
         try:
             # Medir latencia de la API
@@ -138,37 +169,70 @@ class InfoCommands(commands.Cog):
                 inline=True
             )
 
-            # Footer kawaii
-            embed.set_footer(
-                text="Sokoromi está funcionando perfectamente! (◕‿◕)", 
-                icon_url=self.bot.user.display_avatar.url
-            )
+            # ← MODIFICAR: Footer contextual kawaii
+            if interaction.guild is None:
+                embed.set_footer(
+                    text="📱 Ping desde DM • Sokoromi está contigo en todas partes! (◕‿◕)", 
+                    icon_url=self.bot.user.display_avatar.url
+                )
+            else:
+                embed.set_footer(
+                    text=f"🎮 Ping desde {interaction.guild.name} • Funcionando perfectamente! (◕‿◕)", 
+                    icon_url=self.bot.user.display_avatar.url
+                )
             
             await interaction.followup.send(embed=embed)
             
         except Exception as e:
             self.logger.error(f"Error in ping command: {e}")
-            await interaction.followup.send(
-                "❌ Error obteniendo información del ping. Intenta de nuevo.", 
-                ephemeral=True
-            )
+            
+            # ← AGREGAR: Manejo de error contextual
+            error_msg = "❌ Error obteniendo información del ping. Intenta de nuevo."
+            if interaction.guild is None:
+                error_msg += "\n📱 Si el error persiste en DM, contacta al desarrollador."
+            
+            await interaction.followup.send(error_msg, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.bot:
             return
+        
+        # ← MODIFICAR: Soporte para DMs también
+        if not isinstance(message.channel, (discord.TextChannel, discord.DMChannel)):
+            return
+            
         if self.bot.user in message.mentions:
             embed = discord.Embed(
-                title=f"Hola {message.author.display_name}, soy {self.bot.user.name}!",
+                title=f"¡Hola {message.author.display_name}, soy {self.bot.user.name}! ✨",
                 description="Usa `/play` para comenzar una partida de Sokoban.\nUsa `/info` para más información y ayuda.",
                 color=0x3498db
             )
-            embed.set_footer(text="También puedes usar los comandos slash directamente.")
+            
+            # ← AGREGAR: Mensaje contextual
+            if isinstance(message.channel, discord.DMChannel):
+                embed.add_field(
+                    name="📱 Estás en DM",
+                    value="¡Perfecto! Todos mis comandos funcionan aquí también.\n¡Gracias por instalarme como User App!",
+                    inline=False
+                )
+                embed.set_footer(text="✨ User App • Disponible en cualquier lugar")
+            else:
+                embed.add_field(
+                    name="🎮 Comandos disponibles",
+                    value="También puedes usarme en DM instalándome como User App",
+                    inline=False
+                )
+                embed.set_footer(text="También puedes usar los comandos slash directamente.")
+            
+            embed.set_thumbnail(url=self.bot.user.display_avatar.url)
+            
             await message.channel.send(embed=embed)
+            
             try:
                 await message.delete()
             except:
-                pass
+                pass  # No hay permisos o el mensaje ya fue eliminado
 
 async def setup(bot):
     await bot.add_cog(InfoCommands(bot))

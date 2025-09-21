@@ -29,7 +29,7 @@ class SokobotPython(Bot):
         intents.guild_reactions = True
 
         super().__init__(
-            command_prefix=self.get_prefix,
+            command_prefix=commands.when_mentioned_or("!"),
             intents=intents,
             description="Sokobot en Python - El clásico juego de rompecabezas de empujar cajas"
         )
@@ -54,6 +54,17 @@ class SokobotPython(Bot):
         prefix = await self.db.get_guild_prefix(guild_id)
         self.prefixes[guild_id] = prefix
         return prefix
+
+    async def on_message(self, message):
+        if message.author.bot:
+            return
+        ctx = await self.get_context(message)
+        if ctx.prefix is not None and message.guild:
+            guild_id = message.guild.id
+            if guild_id not in self.prefixes:
+                prefix = await self.db.get_guild_prefix(guild_id)
+                self.prefixes[guild_id] = prefix
+        await self.process_commands(message)
 
     async def setup_hook(self):
         logger.info("Configurando bot...")

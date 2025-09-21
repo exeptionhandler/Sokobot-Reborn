@@ -16,7 +16,6 @@ from database.database import Database
 from database.leaderboard import Leaderboard
 from config import Config
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -58,11 +57,14 @@ class SokobotPython(Bot):
 
     async def setup_hook(self):
         logger.info("Configurando bot...")
+        print("Comandos actuales en árbol antes de cargar cogs:", [cmd.name for cmd in self.tree.get_commands()])
 
         await self.db.initialize()
         await self.leaderboard.initialize()
 
         await self.load_cogs()
+        
+        print("Comandos actuales en árbol después de cargar cogs:", [cmd.name for cmd in self.tree.get_commands()])
 
         if self.testing_mode and self.test_guilds:
             for guild_id in self.test_guilds:
@@ -75,7 +77,7 @@ class SokobotPython(Bot):
         else:
             try:
                 synced = await self.tree.sync()
-                logger.info(f"Sincronizados {len(synced)} comandos slash")
+                logger.info(f"Sincronizados {len(synced)} comandos slash globalmente")
             except Exception as e:
                 logger.error(f"Error sincronizando comandos: {e}")
 
@@ -84,7 +86,7 @@ class SokobotPython(Bot):
             await self.add_cog(GameCommands(self))
             await self.add_cog(InfoCommands(self))
             await self.add_cog(AdminCommands(self))
-            await self.load_extension("commands.leaderboard_commands")
+            await self.add_cog(LeaderboardCommands(self))
 
             logger.info("Comandos cargados exitosamente")
         except Exception as e:

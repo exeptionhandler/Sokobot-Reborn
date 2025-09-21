@@ -5,7 +5,6 @@ from typing import Optional
 
 class LeaderboardCommands(commands.Cog):
     def __init__(self, bot):
-        print("Leaderboard Commands cog cargado")
         self.bot = bot
 
     @app_commands.command(

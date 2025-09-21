@@ -5,7 +5,6 @@ from typing import Optional
 
 class LeaderboardView(discord.ui.View):
     def __init__(self, bot):
-        print("Info Commands cog cargado")
         super().__init__(timeout=300)
         self.bot = bot
         self.current_sort = 'best_level'

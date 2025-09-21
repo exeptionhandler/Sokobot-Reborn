@@ -60,7 +60,7 @@ class InfoCommands(commands.Cog):
             value="• Más puntos por completar niveles rápido\n• Menos movimientos = más puntos\n• Compite en el leaderboard global\n• Estadísticas detalladas de progreso",
             inline=False
         )
-        embed.set_footer(text="¡Creado con ❤️ para la comunidad de Discord!")
+        embed.set_footer(text="¡Creado con ❤️ por @f4b1o!")
         await interaction.response.send_message(embed=embed)
 
     @commands.Cog.listener()

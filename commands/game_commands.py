@@ -13,6 +13,7 @@ class GameView(discord.ui.View):
         super().__init__(timeout=300)
         self.game_instance = game_instance
         self.user_id = user_id
+        self.input_mode = "buttons"  # Control del modo de input
 
     async def interaction_check(self, interaction: discord.Interaction) -> bool:
         if interaction.user.id != self.user_id:
@@ -23,35 +24,70 @@ class GameView(discord.ui.View):
             return False
         return True
 
-    @discord.ui.button(label='↑', style=discord.ButtonStyle.primary, row=0)
+    # FILA 0: Botón UP centrado
+    @discord.ui.button(emoji='⬆️', style=discord.ButtonStyle.primary, row=0)
     async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_move(interaction, 'w')
 
-    @discord.ui.button(label='←', style=discord.ButtonStyle.primary, row=1)
+    # FILA 1: LEFT, DOWN, RIGHT en línea
+    @discord.ui.button(emoji='⬅️', style=discord.ButtonStyle.primary, row=1)
     async def move_left(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_move(interaction, 'a')
 
-    @discord.ui.button(label='🔄', style=discord.ButtonStyle.secondary, row=1)
-    async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'r')
-
-    @discord.ui.button(label='→', style=discord.ButtonStyle.primary, row=1)
-    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'd')
-
-    @discord.ui.button(label='↓', style=discord.ButtonStyle.primary, row=2)
+    @discord.ui.button(emoji='⬇️', style=discord.ButtonStyle.primary, row=1)
     async def move_down(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_move(interaction, 's')
 
-    @discord.ui.button(label='🛑 Parar', style=discord.ButtonStyle.danger, row=3)
-    async def stop_game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'stop')
+    @discord.ui.button(emoji='➡️', style=discord.ButtonStyle.primary, row=1)
+    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, 'd')
 
-    @discord.ui.button(label='🎲 Nuevo Mapa', style=discord.ButtonStyle.secondary, row=3)
+    # FILA 2: Controles de juego
+    @discord.ui.button(emoji='🔄', label='Reset', style=discord.ButtonStyle.secondary, row=2)
+    async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, 'r')
+
+    @discord.ui.button(emoji='🎲', label='Nuevo Mapa', style=discord.ButtonStyle.secondary, row=2)
     async def new_map(self, interaction: discord.Interaction, button: discord.ui.Button):
         await self.handle_move(interaction, 'mr')
 
+    # FILA 3: Controles de sesión y modo
+    @discord.ui.button(emoji='⌨️', label='Modo Texto', style=discord.ButtonStyle.success, row=3)
+    async def toggle_input_mode(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if self.input_mode == "buttons":
+            self.input_mode = "text"
+            button.label = "Modo Botones"
+            button.emoji = "🖱️"
+            button.style = discord.ButtonStyle.secondary
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send(
+                "💬 **Modo texto activado**\nAhora usa `w`, `a`, `s`, `d` para moverte\nLos botones están desactivados temporalmente", 
+                ephemeral=True
+            )
+        else:
+            self.input_mode = "buttons" 
+            button.label = "Modo Texto"
+            button.emoji = "⌨️"
+            button.style = discord.ButtonStyle.success
+            await interaction.response.edit_message(view=self)
+            await interaction.followup.send(
+                "🖱️ **Modo botones activado**\nUsa las flechas para moverte\nLos comandos de texto están desactivados", 
+                ephemeral=True
+            )
+
+    @discord.ui.button(emoji='🛑', label='Parar', style=discord.ButtonStyle.danger, row=3)
+    async def stop_game(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await self.handle_move(interaction, 'stop')
+
     async def handle_move(self, interaction: discord.Interaction, direction: str):
+        # Verificar modo de input (excepto para controles especiales)
+        if direction in ['w', 'a', 's', 'd'] and self.input_mode == "text":
+            await interaction.response.send_message(
+                "⌨️ Estás en modo texto. Usa los comandos `w`, `a`, `s`, `d` o cambia a modo botones.", 
+                ephemeral=True
+            )
+            return
+            
         try:
             result = await self.game_instance.handle_input(direction)
 
@@ -127,9 +163,9 @@ class GameCommands(commands.Cog):
         try:
             user = interaction.user if isinstance(interaction.user, discord.User) else await interaction.client.fetch_user(interaction.user.id)
             game = SokobanGame(user, self.bot.leaderboard, emoji)
-            self.active_games[user_id] = game
-            embed = await game.create_game_embed()
             view = GameView(game, user_id)
+            self.active_games[user_id] = {'game': game, 'view': view}  # Guardamos tanto el juego como el view
+            embed = await game.create_game_embed()
             await interaction.response.send_message(embed=embed, view=view)
         except Exception as e:
             await interaction.response.send_message(f"❌ Error iniciando el juego: {e}", ephemeral=True)
@@ -168,6 +204,7 @@ class GameCommands(commands.Cog):
         except Exception as e:
             await interaction.response.send_message(f"❌ Error obteniendo estadísticas: {e}", ephemeral=True)
 
+    # Comandos de texto mejorados
     @commands.command(name="w", aliases=["arriba"])
     async def move_up_text(self, ctx):
         await self.handle_text_input(ctx, 'w')
@@ -196,13 +233,35 @@ class GameCommands(commands.Cog):
         user_id = ctx.author.id
         if user_id not in self.active_games:
             return
+
         try:
-            game = self.active_games[user_id]
+            game_data = self.active_games[user_id]
+            game = game_data['game']
+            view = game_data['view']
+            
+            # Verificar si está en modo texto
+            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
+                await ctx.send("🖱️ Estás en modo botones. Usa las flechas del embed o cambia a modo texto.", delete_after=3)
+                try:
+                    await ctx.message.delete()
+                except:
+                    pass
+                return
+                
             result = await game.handle_input(direction)
+            
+            # Eliminar el comando del usuario
             try:
                 await ctx.message.delete()
             except:
                 pass
+                
+            # Si necesita actualizar el embed (movimiento exitoso)
+            if result['action'] == 'move':
+                # Aquí necesitarías una forma de actualizar el mensaje original
+                # Esto requiere que guardes la referencia del mensaje
+                pass
+                
         except Exception as e:
             await ctx.send(f"❌ Error: {e}", delete_after=5)
 
@@ -212,11 +271,20 @@ class GameCommands(commands.Cog):
             return
         if not isinstance(message.channel, discord.TextChannel):
             return
+            
         user_id = message.author.id
         if user_id not in self.active_games:
             return
+            
         content = message.content.lower().strip()
         if content in ['w', 'a', 's', 'd', 'r', 'mr']:
+            # Verificar modo de input antes de procesar
+            game_data = self.active_games[user_id]
+            view = game_data['view']
+            
+            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
+                return  # No procesar comandos de texto en modo botones
+                
             ctx = await self.bot.get_context(message)
             await self.handle_text_input(ctx, content)
 

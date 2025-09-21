@@ -1,292 +1,121 @@
 import discord
+import time
 from discord.ext import commands
 from discord import app_commands
-import asyncio
-from typing import Optional
 
-from game.sokoban_game import SokobanGame
-from utils.game_utils import GameUtils
-
-class GameView(discord.ui.View):
-    def __init__(self, game_instance, user_id):
-        print("Game Commands cog cargado")
-        super().__init__(timeout=300)
-        self.game_instance = game_instance
-        self.user_id = user_id
-        self.input_mode = "buttons"  # Control del modo de input
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "❌ No puedes controlar el juego de otro jugador!",
-                ephemeral=True
-            )
-            return False
-        return True
-
-    # FILA 0: Botón UP centrado
-    @discord.ui.button(emoji='⬆️', style=discord.ButtonStyle.primary, row=0)
-    async def move_up(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'w')
-
-    # FILA 1: LEFT, DOWN, RIGHT en línea
-    @discord.ui.button(emoji='⬅️', style=discord.ButtonStyle.primary, row=1)
-    async def move_left(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'a')
-
-    @discord.ui.button(emoji='⬇️', style=discord.ButtonStyle.primary, row=1)
-    async def move_down(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 's')
-
-    @discord.ui.button(emoji='➡️', style=discord.ButtonStyle.primary, row=1)
-    async def move_right(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'd')
-
-    # FILA 2: Controles de juego
-    @discord.ui.button(emoji='🔄', label='Reset', style=discord.ButtonStyle.secondary, row=2)
-    async def reset(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'r')
-
-    @discord.ui.button(emoji='🎲', label='Nuevo Mapa', style=discord.ButtonStyle.secondary, row=2)
-    async def new_map(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'mr')
-
-    # FILA 3: Controles de sesión y modo
-    @discord.ui.button(emoji='⌨️', label='Modo Texto', style=discord.ButtonStyle.success, row=3)
-    async def toggle_input_mode(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if self.input_mode == "buttons":
-            self.input_mode = "text"
-            button.label = "Modo Botones"
-            button.emoji = "🖱️"
-            button.style = discord.ButtonStyle.secondary
-            await interaction.response.edit_message(view=self)
-            await interaction.followup.send(
-                "💬 **Modo texto activado**\nAhora usa `w`, `a`, `s`, `d` para moverte\nLos botones están desactivados temporalmente", 
-                ephemeral=True
-            )
-        else:
-            self.input_mode = "buttons" 
-            button.label = "Modo Texto"
-            button.emoji = "⌨️"
-            button.style = discord.ButtonStyle.success
-            await interaction.response.edit_message(view=self)
-            await interaction.followup.send(
-                "🖱️ **Modo botones activado**\nUsa las flechas para moverte\nLos comandos de texto están desactivados", 
-                ephemeral=True
-            )
-
-    @discord.ui.button(emoji='🛑', label='Parar', style=discord.ButtonStyle.danger, row=3)
-    async def stop_game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.handle_move(interaction, 'stop')
-
-    async def handle_move(self, interaction: discord.Interaction, direction: str):
-        # Verificar modo de input (excepto para controles especiales)
-        if direction in ['w', 'a', 's', 'd'] and self.input_mode == "text":
-            await interaction.response.send_message(
-                "⌨️ Estás en modo texto. Usa los comandos `w`, `a`, `s`, `d` o cambia a modo botones.", 
-                ephemeral=True
-            )
-            return
-            
-        try:
-            result = await self.game_instance.handle_input(direction)
-
-            if result['action'] == 'move':
-                embed = await self.game_instance.create_game_embed()
-                await interaction.response.edit_message(embed=embed, view=self)
-
-            elif result['action'] == 'win':
-                embed = await self.game_instance.create_win_embed()
-                new_view = WinView(self.game_instance, self.user_id)
-                await interaction.response.edit_message(embed=embed, view=new_view)
-
-            elif result['action'] == 'stop':
-                embed = discord.Embed(
-                    title="🎮 Juego Terminado",
-                    description=f"¡Gracias por jugar, {interaction.user.mention}!",
-                    color=0x00ff00
-                )
-                await interaction.response.edit_message(embed=embed, view=None)
-
-        except Exception as e:
-            await interaction.response.send_message(
-                f"❌ Error procesando movimiento: {e}",
-                ephemeral=True
-            )
-
-class WinView(discord.ui.View):
-    def __init__(self, game_instance, user_id):
-        super().__init__(timeout=60)
-        self.game_instance = game_instance
-        self.user_id = user_id
-
-    async def interaction_check(self, interaction: discord.Interaction) -> bool:
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "❌ No puedes controlar el juego de otro jugador!",
-                ephemeral=True
-            )
-            return False
-        return True
-
-    @discord.ui.button(label='➡️ Continuar', style=discord.ButtonStyle.green)
-    async def continue_game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await self.game_instance.next_level()
-        embed = await self.game_instance.create_game_embed()
-        view = GameView(self.game_instance, self.user_id)
-        await interaction.response.edit_message(embed=embed, view=view)
-
-    @discord.ui.button(label='🛑 Parar', style=discord.ButtonStyle.red)
-    async def stop_game(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = discord.Embed(
-            title="🎮 Juego Terminado",
-            description=f"¡Gracias por jugar, {interaction.user.mention}!",
-            color=0x00ff00
-        )
-        await interaction.response.edit_message(embed=embed, view=None)
-
-class GameCommands(commands.Cog):
+class AdminCommands(commands.Cog):
     def __init__(self, bot):
+        print("Admin Commands cog cargado")
+
         self.bot = bot
-        self.active_games = {}
 
-    @app_commands.command(name="play", description="Iniciar una nueva partida de Sokoban")
-    @app_commands.describe(emoji="Emoji personalizado para tu personaje (opcional)")
-    async def play_slash(self, interaction: discord.Interaction, emoji: Optional[str] = None):
-        user_id = interaction.user.id
-        if user_id in self.active_games:
-            await interaction.response.send_message(
-                "❌ Ya tienes un juego activo. Usa `/stop` para terminarlo primero.",
-                ephemeral=True
-            )
+    @app_commands.command(name="prefix", description="Cambiar el prefijo del bot en este servidor")
+    @app_commands.describe(nuevo_prefijo="Nuevo prefijo (1 a 5 caracteres)")
+    @app_commands.default_permissions(administrator=True)
+    async def prefix_slash(self, interaction: discord.Interaction, nuevo_prefijo: str):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Solo los administradores pueden cambiar el prefijo.", ephemeral=True)
+            return
+        if len(nuevo_prefijo) < 1 or len(nuevo_prefijo) > 5:
+            await interaction.response.send_message("❌ El prefijo debe tener entre 1 y 5 caracteres.", ephemeral=True)
+            return
+        forbidden_chars = ['@', '#', ':', '`', '\\', '/', ' ']
+        if any(char in forbidden_chars for char in nuevo_prefijo):
+            await interaction.response.send_message(f"❌ El prefijo contiene caracteres no permitidos: {forbidden_chars}", ephemeral=True)
             return
         try:
-            user = interaction.user if isinstance(interaction.user, discord.User) else await interaction.client.fetch_user(interaction.user.id)
-            game = SokobanGame(user, self.bot.leaderboard, emoji)
-            view = GameView(game, user_id)
-            self.active_games[user_id] = {'game': game, 'view': view}  # Guardamos tanto el juego como el view
-            embed = await game.create_game_embed()
-            await interaction.response.send_message(embed=embed, view=view)
-        except Exception as e:
-            await interaction.response.send_message(f"❌ Error iniciando el juego: {e}", ephemeral=True)
-
-    @app_commands.command(name="stop", description="Terminar tu partida actual de Sokoban")
-    async def stop_slash(self, interaction: discord.Interaction):
-        user_id = interaction.user.id
-        if user_id not in self.active_games:
-            await interaction.response.send_message("❌ No tienes un juego activo.", ephemeral=True)
-            return
-        del self.active_games[user_id]
-        embed = discord.Embed(
-            title="🎮 Juego Terminado",
-            description=f"¡Gracias por jugar, {interaction.user.mention}!",
-            color=0x00ff00
-        )
-        await interaction.response.send_message(embed=embed)
-
-    @app_commands.command(name="stats", description="Ver tus estadísticas de Sokoban")
-    async def stats_slash(self, interaction: discord.Interaction):
-        try:
-            stats = await self.bot.leaderboard.get_player_stats(interaction.user.id)
-            embed = discord.Embed(
-                title=f"📊 Estadísticas de {interaction.user.display_name}",
-                color=0x3498db
-            )
-            if stats:
-                embed.add_field(name="🏆 Mejor Nivel", value=stats['best_level'], inline=True)
-                embed.add_field(name="🎮 Partidas Jugadas", value=stats['total_games'], inline=True)
-                embed.add_field(name="⏱️ Tiempo Total", value=f"{stats['total_time']:.1f} s", inline=True)
-                embed.add_field(name="📈 Puntuación Total", value=stats['total_score'], inline=True)
-            else:
-                embed.description = "No tienes estadísticas aún. ¡Juega tu primera partida!"
-            embed.set_thumbnail(url=interaction.user.display_avatar.url)
+            await self.bot.db.set_guild_prefix(interaction.guild.id, nuevo_prefijo)
+            self.bot.prefixes[interaction.guild.id] = nuevo_prefijo
+            embed = discord.Embed(title="✅ Prefijo Actualizado", description=f"El prefijo del servidor ha sido cambiado a: `{nuevo_prefijo}`", color=0x00ff00)
+            embed.add_field(name="💡 Nota", value="Los comandos slash (/) seguirán funcionando normalmente.", inline=False)
             await interaction.response.send_message(embed=embed)
         except Exception as e:
-            await interaction.response.send_message(f"❌ Error obteniendo estadísticas: {e}", ephemeral=True)
+            await interaction.response.send_message(f"❌ Error cambiando el prefijo: {e}", ephemeral=True)
 
-    # Comandos de texto mejorados
-    @commands.command(name="w", aliases=["arriba"])
-    async def move_up_text(self, ctx):
-        await self.handle_text_input(ctx, 'w')
-
-    @commands.command(name="s", aliases=["abajo"])
-    async def move_down_text(self, ctx):
-        await self.handle_text_input(ctx, 's')
-
-    @commands.command(name="a", aliases=["izquierda"])
-    async def move_left_text(self, ctx):
-        await self.handle_text_input(ctx, 'a')
-
-    @commands.command(name="d", aliases=["derecha"])
-    async def move_right_text(self, ctx):
-        await self.handle_text_input(ctx, 'd')
-
-    @commands.command(name="r")
-    async def reset_text(self, ctx):
-        await self.handle_text_input(ctx, 'r')
-
-    @commands.command(name="mr")
-    async def new_map_text(self, ctx):
-        await self.handle_text_input(ctx, 'mr')
-
-    async def handle_text_input(self, ctx, direction):
-        user_id = ctx.author.id
-        if user_id not in self.active_games:
+    @app_commands.command(name="reset-prefix", description="Restaurar el prefijo por defecto (!)")
+    @app_commands.default_permissions(administrator=True)
+    async def reset_prefix_slash(self, interaction: discord.Interaction):
+        if not interaction.user.guild_permissions.administrator:
+            await interaction.response.send_message("❌ Solo los administradores pueden cambiar el prefijo.", ephemeral=True)
             return
-
         try:
-            game_data = self.active_games[user_id]
-            game = game_data['game']
-            view = game_data['view']
-            
-            # Verificar si está en modo texto
-            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
-                await ctx.send("🖱️ Estás en modo botones. Usa las flechas del embed o cambia a modo texto.", delete_after=3)
-                try:
-                    await ctx.message.delete()
-                except:
-                    pass
-                return
-                
-            result = await game.handle_input(direction)
-            
-            # Eliminar el comando del usuario
-            try:
-                await ctx.message.delete()
-            except:
-                pass
-                
-            # Si necesita actualizar el embed (movimiento exitoso)
-            if result['action'] == 'move':
-                # Aquí necesitarías una forma de actualizar el mensaje original
-                # Esto requiere que guardes la referencia del mensaje
-                pass
-                
+            await self.bot.db.set_guild_prefix(interaction.guild.id, '!')
+            self.bot.prefixes[interaction.guild.id] = '!'
+            embed = discord.Embed(title="🔄 Prefijo Restaurado", description="El prefijo del servidor ha sido restaurado a: `!`", color=0x3498db)
+            await interaction.response.send_message(embed=embed)
         except Exception as e:
-            await ctx.send(f"❌ Error: {e}", delete_after=5)
+            await interaction.response.send_message(f"❌ Error restaurando el prefijo: {e}", ephemeral=True)
+            
+    @app_commands.command(name="ping", description="Muestra la latencia del bot y estado de conexión")
+    async def ping(self, interaction: discord.Interaction):
+        # Medir latencia de la API
+        start_time = time.time()
+        await interaction.response.defer()
+        api_latency = (time.time() - start_time) * 1000
+        
+        # Latencia del websocket
+        websocket_latency = self.bot.latency * 1000
+        
+        # Crear embed kawaii
+        embed = discord.Embed(
+            title="🏓 Pong! ✨",
+            color=0xFF69B4,  # Rosa kawaii
+            timestamp=discord.utils.utcnow()
+        )
+        
+        # Determinar el estado basado en la latencia
+        if websocket_latency < 100:
+            status_emoji = "💚"
+            status_text = "Excelente"
+        elif websocket_latency < 200:
+            status_emoji = "💛" 
+            status_text = "Buena"
+        elif websocket_latency < 500:
+            status_emoji = "🧡"
+            status_text = "Regular" 
+        else:
+            status_emoji = "❤️"
+            status_text = "Lenta"
+        
+        embed.add_field(
+            name="🌐 Latencia WebSocket", 
+            value=f"`{websocket_latency:.0f}ms` {status_emoji}", 
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📡 Latencia API", 
+            value=f"`{api_latency:.0f}ms`", 
+            inline=True
+        )
+        
+        embed.add_field(
+            name="📊 Estado", 
+            value=f"{status_text}", 
+            inline=True
+        )
+        
+        # Agregar al embed información adicional
+        embed.add_field(
+            name="🎮 Servidores", 
+            value=f"`{len(self.bot.guilds)}`", 
+            inline=True
+        )
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
-        if message.author.bot:
-            return
-        if not isinstance(message.channel, discord.TextChannel):
-            return
-            
-        user_id = message.author.id
-        if user_id not in self.active_games:
-            return
-            
-        content = message.content.lower().strip()
-        if content in ['w', 'a', 's', 'd', 'r', 'mr']:
-            # Verificar modo de input antes de procesar
-            game_data = self.active_games[user_id]
-            view = game_data['view']
-            
-            if hasattr(view, 'input_mode') and view.input_mode == "buttons":
-                return  # No procesar comandos de texto en modo botones
-                
-            ctx = await self.bot.get_context(message)
-            await self.handle_text_input(ctx, content)
+        embed.add_field(
+            name="👥 Usuarios", 
+            value=f"`{len(self.bot.users)}`", 
+            inline=True
+        )
+
+        # Información adicional kawaii
+        embed.set_footer(
+            text="Sokoromi está funcionando perfectamente! (◕‿◕)", 
+            icon_url=self.bot.user.display_avatar.url
+        )
+        
+        await interaction.followup.send(embed=embed)
+
 
 async def setup(bot):
-    await bot.add_cog(GameCommands(bot))
+    await bot.add_cog(AdminCommands(bot))

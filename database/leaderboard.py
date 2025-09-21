@@ -2,8 +2,9 @@ import discord
 from typing import List, Dict, Optional, Tuple
 
 class Leaderboard:
-    def __init__(self, database):
+    def __init__(self, database, bot=None):
         self.db = database
+        self.bot = bot
 
     async def initialize(self):
         await self.db.execute('''
@@ -101,10 +102,32 @@ class Leaderboard:
         if not leaderboard:
             embed.description = "No hay datos de leaderboard aún."
             return embed
+        
         medals = ["🥇", "🥈", "🥉"] + ["🏅"] * 7
         leaderboard_text = ""
+        
         for i, player in enumerate(leaderboard):
             medal = medals[i] if i < len(medals) else "📍"
+            
+            # Intentar obtener el usuario real desde Discord
+            display_name = player['username']
+            if self.bot:
+                try:
+                    user = self.bot.get_user(player['user_id'])
+                    if user:
+                        display_name = user.display_name
+                    else:
+                        # Intentar fetchear el usuario si no está en caché
+                        user = await self.bot.fetch_user(player['user_id'])
+                        display_name = user.display_name if user else player['username']
+                except:
+                    # Si falla, usar el nombre guardado en la base de datos
+                    display_name = player['username']
+            
+            # Si el nombre sigue siendo Usuario_ID, mostrar algo más amigable
+            if display_name.startswith("Usuario_"):
+                display_name = "Usuario Desconocido"
+            
             if sort_by == 'best_level':
                 value = f"Nivel {player['best_level']}"
             elif sort_by == 'total_score':
@@ -113,7 +136,9 @@ class Leaderboard:
                 value = f"{player['average_score']:.1f} pts"
             elif sort_by == 'total_games':
                 value = f"{player['total_games']} partidas"
-            leaderboard_text += f"{medal} **{player['username']}** - {value}\n"
+            
+            leaderboard_text += f"{medal} **{display_name}** - {value}\n"
+        
         embed.description = leaderboard_text
         embed.set_footer(text="Usa /stats para ver tus estadísticas personales")
         return embed

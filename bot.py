@@ -35,7 +35,7 @@ class SokobotPython(Bot):
         )
 
         self.db = Database()
-        self.leaderboard = Leaderboard(self.db)
+        self.leaderboard = Leaderboard(self.db, self)
         self.game_utils = GameUtils()
         self.prefixes = {}
 

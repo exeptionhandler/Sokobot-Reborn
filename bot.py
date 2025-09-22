@@ -15,6 +15,7 @@ from commands.leaderboard_commands import LeaderboardCommands
 from database.database import Database
 from database.leaderboard import Leaderboard
 from config import Config
+from typing import Tuple
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -31,7 +32,7 @@ class SokoromiBot(Bot):  # ← CAMBIAR: SokobotPython → SokoromiBot
         super().__init__(
             command_prefix=commands.when_mentioned_or("!"),
             intents=intents,
-            description="Sokoromi - Bot de Sokoban Kawaii para Discord"  # ← CAMBIAR: Descripción actualizada
+            description="Sokoromi - Bot de Sokoban para Discord ❤️"  # ← CAMBIAR: Descripción actualizada
         )
 
         self.db = Database()

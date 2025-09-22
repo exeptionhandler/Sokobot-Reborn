@@ -37,7 +37,7 @@ class InfoCommands(commands.Cog):
     @app_commands.allowed_contexts(guilds=True, dms=True, private_channels=True)  # ← AGREGAR: DM support
     async def info_slash(self, interaction: discord.Interaction):
         embed = discord.Embed(
-            title="🤖 Sokoromi - Bot de Sokoban Kawaii",  # ← CAMBIAR: Nombre actualizado
+            title="🤖 Sokoromi - Bot de Sokoban 🌸",  # ← CAMBIAR: Nombre actualizado
             description="Bot de Discord para jugar Sokoban, el clásico juego de rompecabezas de empujar cajas.",
             color=0x3498db
         )

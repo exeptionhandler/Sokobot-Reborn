@@ -30,7 +30,7 @@ class SokoromiBot(Bot):  # ← CAMBIAR: SokobotPython → SokoromiBot
         intents.guild_reactions = True
 
         super().__init__(
-            command_prefix=commands.when_mentioned_or("!"),
+            command_prefix=commands.when_mentioned_or("sk!"),
             intents=intents,
             description="Sokoromi - Bot de Sokoban para Discord ❤️"  # ← CAMBIAR: Descripción actualizada
         )

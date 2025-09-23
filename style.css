@@ -6,7 +6,7 @@
 }
 
 :root {
-    /* Colores kawaii pastel */
+    /* Modo claro (kawaii pastel) */
     --primary-color: #FFB6C1;
     --secondary-color: #FFC0CB;
     --accent-color: #E6E6FA;
@@ -23,6 +23,44 @@
     --font-primary: 'Comfortaa', cursive;
     --font-secondary: 'Inter', sans-serif;
 }
+
+/* Modo oscuro kawaii */
+[data-theme="dark"] {
+    --primary-color: #FF8FA3;
+    --secondary-color: #FFB3BA;
+    --accent-color: #C8A8E9;
+    --text-color: #E8E8E8;
+    --text-light: #B8B8B8;
+    --background: #1A1A2E;
+    --card-bg: #16213E;
+    --gradient-1: linear-gradient(135deg, #FF8FA3, #FFB3BA);
+    --gradient-2: linear-gradient(135deg, #C8A8E9, #D8B8F9);
+    --shadow: 0 10px 30px rgba(255, 143, 163, 0.3);
+    --shadow-hover: 0 15px 40px rgba(255, 143, 163, 0.4);
+}
+
+/* Detección automática de preferencia del sistema */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #FF8FA3;
+        --secondary-color: #FFB3BA;
+        --accent-color: #C8A8E9;
+        --text-color: #E8E8E8;
+        --text-light: #B8B8B8;
+        --background: #1A1A2E;
+        --card-bg: #16213E;
+        --gradient-1: linear-gradient(135deg, #FF8FA3, #FFB3BA);
+        --gradient-2: linear-gradient(135deg, #C8A8E9, #D8B8F9);
+        --shadow: 0 10px 30px rgba(255, 143, 163, 0.3);
+        --shadow-hover: 0 15px 40px rgba(255, 143, 163, 0.4);
+    }
+}
+
+/* Transiciones suaves para cambio de tema */
+body, .navbar, .feature-card, .command-card, .stat-card, .game-controls {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
 
 body {
     font-family: var(--font-secondary);
@@ -673,3 +711,4 @@ kbd {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+

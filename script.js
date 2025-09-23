@@ -291,3 +291,137 @@ function showNotification(message) {
         }, 300);
     }, 3000);
 }
+// Gestión de tema oscuro/claro
+class ThemeManager {
+    constructor() {
+        this.theme = localStorage.getItem('theme') || 'auto';
+        this.init();
+    }
+
+    init() {
+        this.applyTheme();
+        this.bindEvents();
+        this.updateToggleIcon();
+    }
+
+    bindEvents() {
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => this.toggleTheme());
+        }
+
+        // Escuchar cambios en la preferencia del sistema
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (this.theme === 'auto') {
+                this.applyTheme();
+            }
+        });
+    }
+
+    toggleTheme() {
+        const themes = ['light', 'dark', 'auto'];
+        const currentIndex = themes.indexOf(this.theme);
+        this.theme = themes[(currentIndex + 1) % themes.length];
+        
+        localStorage.setItem('theme', this.theme);
+        this.applyTheme();
+        this.updateToggleIcon();
+        
+        // Animación kawaii al cambiar tema
+        this.playThemeChangeAnimation();
+    }
+
+    applyTheme() {
+        const html = document.documentElement;
+        
+        if (this.theme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+        } else if (this.theme === 'light') {
+            html.removeAttribute('data-theme');
+        } else {
+            // Auto - seguir preferencia del sistema
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (prefersDark) {
+                html.setAttribute('data-theme', 'dark');
+            } else {
+                html.removeAttribute('data-theme');
+            }
+        }
+    }
+
+    updateToggleIcon() {
+        const toggleIcon = document.querySelector('.theme-toggle-icon');
+        if (!toggleIcon) return;
+
+        const icons = {
+            light: '🌙',
+            dark: '☀️',
+            auto: '🌓'
+        };
+
+        toggleIcon.textContent = icons[this.theme];
+        
+        // Tooltip
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (toggleBtn) {
+            const labels = {
+                light: 'Cambiar a modo oscuro',
+                dark: 'Cambiar a modo automático',
+                auto: 'Cambiar a modo claro'
+            };
+            toggleBtn.setAttribute('aria-label', labels[this.theme]);
+        }
+    }
+
+    playThemeChangeAnimation() {
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (!toggleBtn) return;
+
+        toggleBtn.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+            toggleBtn.style.transform = '';
+        }, 150);
+
+        // Efectos kawaii opcionales
+        this.createThemeParticles();
+    }
+
+    createThemeParticles() {
+        const particles = ['✨', '💖', '🌸', '⭐', '💜'];
+        const toggleBtn = document.getElementById('theme-toggle');
+        if (!toggleBtn) return;
+
+        for (let i = 0; i < 5; i++) {
+            const particle = document.createElement('div');
+            particle.textContent = particles[Math.floor(Math.random() * particles.length)];
+            particle.style.cssText = `
+                position: fixed;
+                pointer-events: none;
+                font-size: 1.2rem;
+                z-index: 9999;
+                opacity: 1;
+                transition: all 1s ease-out;
+            `;
+            
+            const rect = toggleBtn.getBoundingClientRect();
+            particle.style.left = rect.left + rect.width/2 + 'px';
+            particle.style.top = rect.top + rect.height/2 + 'px';
+            
+            document.body.appendChild(particle);
+            
+            setTimeout(() => {
+                particle.style.transform = `translate(${(Math.random() - 0.5) * 100}px, ${-50 - Math.random() * 50}px)`;
+                particle.style.opacity = '0';
+            }, 50);
+            
+            setTimeout(() => {
+                document.body.removeChild(particle);
+            }, 1000);
+        }
+    }
+}
+
+// Inicializar cuando cargue el DOM
+document.addEventListener('DOMContentLoaded', () => {
+    new ThemeManager();
+});

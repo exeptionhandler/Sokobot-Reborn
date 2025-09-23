@@ -211,37 +211,6 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// Inicializar todas las funciones cuando el DOM esté listo
-document.addEventListener('DOMContentLoaded', () => {
-    animateNumbers();
-    animateCards();
-    createFloatingEmojis();
-    
-    // Agregar efecto de parallax suave al hero
-    const hero = document.querySelector('.hero');
-    const heroContent = document.querySelector('.hero-content');
-    
-    window.addEventListener('scroll', () => {
-        const scrolled = window.pageYOffset;
-        const rate = scrolled * -0.3;
-        
-        if (heroContent) {
-            heroContent.style.transform = `translateY(${rate}px)`;
-        }
-    });
-    
-    // Precargar imágenes importantes
-    const importantImages = [
-        'https://via.placeholder.com/40x40/FFB6C1/FFF?text=S',
-        'https://via.placeholder.com/300x300/FFB6C1/FFF?text=Sokoromi'
-    ];
-    
-    importantImages.forEach(src => {
-        const img = new Image();
-        img.src = src;
-    });
-});
-
 // Función para copiar el enlace de invitación
 function copyInviteLink() {
     const inviteUrl = 'https://discord.com/oauth2/authorize?client_id=1419121189611372574&permissions=563364418145344&integration_type=0&scope=bot';
@@ -291,6 +260,7 @@ function showNotification(message) {
         }, 300);
     }, 3000);
 }
+
 // Gestión de tema oscuro/claro
 class ThemeManager {
     constructor() {
@@ -415,13 +385,44 @@ class ThemeManager {
             }, 50);
             
             setTimeout(() => {
-                document.body.removeChild(particle);
+                if (document.body.contains(particle)) {
+                    document.body.removeChild(particle);
+                }
             }, 1000);
         }
     }
 }
 
-// Inicializar cuando cargue el DOM
+// Inicializar todas las funciones cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
     new ThemeManager();
+    animateNumbers();
+    animateCards();
+    createFloatingEmojis();
+    
+    // Agregar efecto de parallax suave al hero
+    const hero = document.querySelector('.hero');
+    const heroContent = document.querySelector('.hero-content');
+    
+    window.addEventListener('scroll', () => {
+        const scrolled = window.pageYOffset;
+        const rate = scrolled * -0.3;
+        
+        if (heroContent) {
+            heroContent.style.transform = `translateY(${rate}px)`;
+        }
+    });
+    
+    // Mejoras adicionales para el theme manager
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    mediaQuery.addEventListener('change', (e) => {
+        const themeManager = new ThemeManager();
+        if (themeManager.theme === 'auto') {
+            const message = e.matches ? 
+                '🌙 Cambiado a modo oscuro automáticamente' : 
+                '☀️ Cambiado a modo claro automáticamente';
+            showNotification(message);
+        }
+    });
 });

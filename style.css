@@ -61,7 +61,6 @@ body, .navbar, .feature-card, .command-card, .stat-card, .game-controls {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
 }
 
-
 body {
     font-family: var(--font-secondary);
     background: var(--background);
@@ -86,6 +85,12 @@ body {
     border-bottom: 1px solid rgba(255, 182, 193, 0.2);
     z-index: 1000;
     transition: all 0.3s ease;
+}
+
+/* Navbar en modo oscuro */
+[data-theme="dark"] .navbar {
+    background: rgba(26, 26, 46, 0.95);
+    border-bottom: 1px solid rgba(255, 143, 163, 0.2);
 }
 
 .nav-container {
@@ -118,6 +123,39 @@ body {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+/* Botón de cambio de tema */
+.theme-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 10px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    background: var(--gradient-1);
+    color: white;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow);
+    margin: 0 20px;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
+}
+
+.theme-toggle-icon {
+    font-size: 1.2rem;
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover .theme-toggle-icon {
+    transform: rotate(20deg);
 }
 
 .nav-menu {
@@ -270,7 +308,7 @@ body {
 }
 
 .btn-secondary {
-    background: white;
+    background: var(--card-bg);
     color: var(--primary-color);
     border: 2px solid var(--primary-color);
 }
@@ -369,7 +407,7 @@ body {
 
 .features {
     padding: 100px 0;
-    background: white;
+    background: var(--card-bg);
 }
 
 .features-grid {
@@ -386,6 +424,10 @@ body {
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 182, 193, 0.1);
+}
+
+[data-theme="dark"] .feature-card {
+    border: 1px solid rgba(255, 143, 163, 0.1);
 }
 
 .feature-card:hover {
@@ -425,7 +467,7 @@ body {
 }
 
 .command-card {
-    background: white;
+    background: var(--card-bg);
     padding: 30px;
     border-radius: 15px;
     box-shadow: var(--shadow);
@@ -453,6 +495,10 @@ body {
     border-radius: 8px;
 }
 
+[data-theme="dark"] .command-name {
+    background: rgba(255, 143, 163, 0.1);
+}
+
 .command-type {
     background: var(--gradient-2);
     color: white;
@@ -468,7 +514,7 @@ body {
 }
 
 .game-controls {
-    background: white;
+    background: var(--card-bg);
     padding: 40px;
     border-radius: 20px;
     box-shadow: var(--shadow);
@@ -513,7 +559,7 @@ kbd {
 /* Stats */
 .stats {
     padding: 100px 0;
-    background: white;
+    background: var(--card-bg);
 }
 
 .stats-grid {
@@ -530,6 +576,10 @@ kbd {
     box-shadow: var(--shadow);
     transition: all 0.3s ease;
     border: 1px solid rgba(255, 182, 193, 0.1);
+}
+
+[data-theme="dark"] .stat-card {
+    border: 1px solid rgba(255, 143, 163, 0.1);
 }
 
 .stat-card:hover {
@@ -643,6 +693,12 @@ kbd {
     box-shadow: 0 5px 20px rgba(255, 182, 193, 0.2);
 }
 
+[data-theme="dark"] .nav-menu.active {
+    background: rgba(26, 26, 46, 0.98);
+    border-top: 1px solid rgba(255, 143, 163, 0.2);
+    box-shadow: 0 5px 20px rgba(255, 143, 163, 0.2);
+}
+
 .nav-toggle.active .bar:nth-child(1) {
     transform: translateY(9px) rotate(45deg);
 }
@@ -661,8 +717,25 @@ kbd {
         display: none;
     }
     
+    .nav-container {
+        padding: 15px 20px;
+        position: relative;
+    }
+    
+    .theme-toggle {
+        position: absolute;
+        right: 70px;
+        top: 50%;
+        transform: translateY(-50%);
+        margin: 0;
+        width: 40px;
+        height: 40px;
+    }
+    
     .nav-toggle {
         display: flex;
+        position: relative;
+        z-index: 1001;
     }
     
     .hero-content {
@@ -703,6 +776,16 @@ kbd {
         font-size: 1rem;
     }
     
+    .theme-toggle {
+        right: 60px;
+        width: 35px;
+        height: 35px;
+    }
+    
+    .theme-toggle-icon {
+        font-size: 1rem;
+    }
+    
     .stats-grid {
         grid-template-columns: 1fr;
     }
@@ -711,4 +794,3 @@ kbd {
         grid-template-columns: repeat(3, 1fr);
     }
 }
-

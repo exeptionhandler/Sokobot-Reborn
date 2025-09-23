@@ -1,0 +1,11 @@
+(self["webpackChunk_canva_web"] = self["webpackChunk_canva_web"] || []).push([[82208],{
+
+/***/ 295247:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);__web_req__(152531);__web_req__(4385);__web_req__(696657);__web_req__(894892);self._5f74ec40302898c5a55451c9fbd04240 = self._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {var eFc,fFc,gFc;eFc=__c.U_({G:__c.T_({text:__c.c1.fz(1),AQa:__c.c1.fz(2),color:__c.c1.qx(3),...__c.y1(4),...__c.z1(5)})});fFc=__c.K_()(()=>({createDefault(){return{data:{G:{text:"[Add Text]",AQa:"[Your name]",color:"#fdf9b4",md:"#000000",YB:__c.A1({size:8})},document:{}},O:{width:100,height:100}}}}));
+gFc=__c.C_()(({aQ:{expr:a}})=>({metadata:{type:"demo-8",name:__c.pb("vAIjvQ",[8])},G:{type:0,Ix:({G:b},{O:c})=>{const d=a.classes.Nra,e=a.classes.Gca,f=a.classes.U1,g=a.classes.qV,h=b.YB,k=()=>c.width-12,l=()=>(h.size??12)*.67*((h.lineHeight??1400)/1E3),m=a.classes.Z1.create({},{U:{fill:f.create({},{attributes:{color:()=>b.color}})},attributes:{top:0,left:0,width:()=>c.width,height:()=>c.height-4}}),n=d.create({},{U:{fb:a.list([()=>g.create({d:`M0 0 ${.05*c.width} ${4}C${.25*c.width} 0 ${.75*c.width} 0 ${.95*
+c.width} ${4}l${.05*c.width}-${4}H0`},{U:{fill:f.create({},{attributes:{color:"#394c60",xa:.9}})},attributes:{}})])},attributes:{top:()=>c.height-4,left:0,width:()=>c.width,height:4,viewBox:()=>({top:0,left:0,width:c.width,height:4})}}),p=e.create({},{U:{text:()=>__c.hic(b.text,{...__c.B2(h),color:b.md})},attributes:{left:6,top:6,width:k,height:()=>c.height-4-12-6-l(),Lf:1}}),q=e.create({},{U:{text:()=>__c.hic(b.AQa,{...__c.B2(h),color:b.md,"text-align":"start","font-size":(h.size??12)*.67,"font-weight":"thin"})},
+attributes:{left:6,top:()=>c.height-4-12+6-l(),width:k,height:l,Lf:1}});return{La:a.list(()=>[n,m,p,q])}}},exports:{}}));__c.d0={hi:fFc,Ld:gFc,ii:eFc};
+}).call(self, self._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/f102e15e004d7f89.js.map

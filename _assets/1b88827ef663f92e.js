@@ -1,0 +1,12 @@
+(self["webpackChunk_canva_web"] = self["webpackChunk_canva_web"] || []).push([[67635],{
+
+/***/ 726606:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);__web_req__(152531);__web_req__(4385);__web_req__(696657);self._5f74ec40302898c5a55451c9fbd04240 = self._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {var xEc=__webpack_require__(405148),l7=xEc.jsx,m7=xEc.jsxs;var yEc=__webpack_require__(371201).PA;var zEc=__webpack_require__(227200),AEc=zEc.useEffect,BEc=zEc.useState;var CEc,DEc,EEc;CEc=__c.U_({G:__c.T_({color:__c.c1.qx(1),...__c.x1(2)})});DEc=__c.K_()(()=>({createDefault(){return{data:{G:{color:"#ffa500",borderColor:"#396baa"},document:{}},O:{width:400,height:300}}}}));
+EEc=__c.C_()(()=>({metadata:{type:"demo-3",name:__c.pb("vAIjvQ",[3])},G:__c.B_(yEc(({data:{G:a},We:b,Ei:{page:c,O:d}})=>{c=c.container;const e=a.color;a=a.borderColor;const [f,g]=BEc(0);AEc(()=>{const k=setInterval(()=>{g(l=>l+1)},1E3);return()=>clearInterval(k)},[]);a={outline:`1px solid ${a}`};const h=__c.yN.create({...__c.tD,Pa:{...__c.CS,Bg:[{color:"#0000ff",xa:0,position:0},{color:"#ffff00",xa:0,position:1}]}});return m7("div",{style:{width:"100%",minHeight:"100%",padding:"8px",boxSizing:"border-box",
+backgroundColor:e,display:"grid",gridGap:"8px",gridTemplateColumns:"repeat(auto-fit, minmax(100px, 1fr))",justifyContent:"center",alignItems:"center",textShadow:"1px 1px 2px black"},children:[m7("div",{style:a,children:[m7("div",{children:["Widget dimensions: ",d.width.toFixed(3),"px X",d.height.toFixed(3),"px"]}),m7("div",{children:["Document ID: ",c.id]}),m7("div",{children:["Language: ",c.language?c.language:"not set"]})]}),m7("div",{style:a,children:["Text in div ",f]}),l7("div",{style:a,children:l7(b.cj,
+{text:__c.Lk.create(__c.Lk.Cb().attrs({"text-align":"center",color:"#0a19f9"}).qb("Multiline").Tq().qb(`Richtext ${f}`).Tq().build())})}),m7("div",{style:{...a,position:"relative"},children:[l7("div",{style:{position:"absolute",top:0,left:0,width:"100%",height:"100%"},children:l7(b.On,{fill:h})}),l7("div",{style:{position:"relative"},children:"Background Fill"})]}),m7("div",{style:a,children:[l7("div",{children:"Block Fill"}),l7("div",{style:{height:"40px"},children:l7(b.On,{fill:h})})]})]})})),exports:{}}));
+__c.Z_={hi:DEc,Ld:EEc,ii:CEc};
+}).call(self, self._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/1b88827ef663f92e.js.map

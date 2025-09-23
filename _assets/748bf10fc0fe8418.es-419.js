@@ -1,0 +1,2 @@
+window['cmsg']['assets'] = window['cmsg']['assets'] || {};
+window['cmsg']['assets']["es-419"] = Object.assign(window['cmsg']['assets']["es-419"] || {}, {"23019":{"js":["_assets/b6b76907f68f56ba.strings.js"],"css":[]},"72719":{"js":["_assets/1e0441ba5f0b03ba.strings.js"],"css":[]}});

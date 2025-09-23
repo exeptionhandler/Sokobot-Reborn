@@ -1,0 +1,12 @@
+(self["webpackChunk_canva_web"] = self["webpackChunk_canva_web"] || []).push([[79745],{
+
+/***/ 934200:
+function(_, __, __webpack_require__) {__webpack_require__.n_x = __webpack_require__.n;const __web_req__ = __webpack_require__;__web_req__(905716);__web_req__(152531);__web_req__(4385);__web_req__(696657);__web_req__(894892);self._5f74ec40302898c5a55451c9fbd04240 = self._5f74ec40302898c5a55451c9fbd04240 || {};(function(__c) {var Lk=__c.Lk;var c1=__c.c1;var hFc=__webpack_require__(405148),s7=hFc.jsx,t7=hFc.jsxs;var iFc=__webpack_require__(371201).PA;var jFc=__webpack_require__(186901),kFc=jFc.sH,lFc=jFc.XI;var mFc,nFc,oFc,pFc;mFc=__c.U_({G:__c.T_({OXa:c1.fz(1),KQa:c1.fz(2),NXa:c1.Mm(3,"Fill"),JQa:c1.Mm(4,"Fill"),N:c1.bE(5),...__c.z1(6)})});nFc=__c.K_()(()=>({createDefault(){return{data:{G:{OXa:"When do kookaburras 'laugh' the most?",KQa:"Dawn and dusk",NXa:{...__c.tD,color:"#ffbd59"},JQa:{...__c.tD,color:"#7ed957"},N:20,YB:__c.A1({fontWeight:"bold",size:16,textAlign:"center"})},document:{}},O:{width:400,height:200}}}}));
+oFc=class{static D(a){__c.M(a,{JBa:kFc.ref})}constructor(a){oFc.D(this);this.JBa=a}};
+pFc=__c.C_()(()=>({metadata:{type:"demo-9",name:__c.pb("vAIjvQ",[9])},r4:()=>new oFc(!1),G:__c.B_(iFc(({data:{G:a,local:b},We:c})=>{const d=b.JBa;return s7("div",{className:"uYWfzg",onClick:lFc(()=>{b.JBa=!d}),children:s7("div",{className:`${"S_dK9w"} ${d?"jOUjEg":""}`,children:t7("div",{className:"_0CDycQ",children:[t7("div",{className:"qY2Chg",children:[s7("div",{className:"brO_NQ",style:{borderRadius:`${a.N}px`},children:s7(c.On,{fill:a.NXa})}),t7("div",{className:"hxs9tg",children:[s7("div",{children:s7(c.cj,
+{text:Lk.create(Lk.Cb().attrs({...__c.B2(a.YB),color:"#000000"}).qb(a.OXa).Tq().build())})}),s7("div",{children:s7(c.cj,{text:Lk.create(Lk.Cb().attrs({...__c.B2(a.YB),color:"#000000","font-weight":"normal","font-size":(a.YB.size??16)/2}).qb("(Tap to reveal)").Tq().build())})})]})]}),t7("div",{className:"_0lBZVg",children:[s7("div",{className:"brO_NQ",style:{borderRadius:`${a.N}px`},children:s7(c.On,{fill:a.JQa})}),s7("div",{className:"hxs9tg",children:s7("div",{children:s7(c.cj,{text:Lk.create(Lk.Cb().attrs({...__c.B2(a.YB),
+color:"#000000"}).qb(a.KQa).Tq().build())})})})]})]})})})})),exports:{}}));__c.e0={hi:nFc,Ld:pFc,ii:mFc};
+}).call(self, self._5f74ec40302898c5a55451c9fbd04240);}
+
+}])
+//# sourceMappingURL=sourcemaps/81bb880471e2deef.js.map

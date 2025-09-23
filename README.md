@@ -114,7 +114,7 @@ python main.py
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para más detalles.
+Este proyecto está bajo la Licencia GNU. Ver el archivo [LICENSE](LICENSE) para más detalles.
 
 ## 🎀 Créditos
 
